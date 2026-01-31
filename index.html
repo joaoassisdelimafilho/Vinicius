@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DG500 Ultra | Auditoria de Precisão</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+
+<header class="app-navbar">
+    <div class="nav-content">
+        <div class="brand">
+            <div class="logo-icon"></div>
+            <span>DG500<b>ULTRA</b></span>
+        </div>
+        <div class="nav-actions">
+            <label for="file-input" class="upload-trigger">📁 CARREGAR BANCO DE RELATÓRIOS (CSV)</label>
+            <input type="file" id="file-input" webkitdirectory directory multiple>
+        </div>
+    </div>
+</header>
+
+<main id="app-viewport" style="display: none;">
+    <section class="kpi-ribbon">
+        <div class="kpi-item">
+            <span class="kpi-label">ITENS ANALISADOS</span>
+            <div class="kpi-value" id="log-count">0</div>
+        </div>
+        <div class="kpi-item">
+            <span class="kpi-label">PROGRAMADO (kg)</span>
+            <div class="kpi-value" id="total-prog-kg">0.00</div>
+        </div>
+        <div class="kpi-item">
+            <span class="kpi-label">MIX CARREGADO</span>
+            <div class="kpi-value" id="total-load-kg">0.00</div>
+        </div>
+        <div class="kpi-item">
+            <span class="kpi-label">ENTREGUE NO COCHO</span>
+            <div class="kpi-value" id="total-unload-kg">0.00</div>
+        </div>
+        <div class="kpi-item kpi-critical">
+            <span class="kpi-label">RESÍDUO NO TANQUE</span>
+            <div class="kpi-value danger" id="total-tank-waste">0.00</div>
+            <span class="kpi-unit">kg</span>
+        </div>
+        <div class="kpi-item kpi-warning">
+            <span class="kpi-label">DESVIO MÉDIO MIX</span>
+            <div class="kpi-value warning" id="global-err">0.00%</div>
+        </div>
+    </section>
+
+    <section class="analytics-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h4>EFICIÊNCIA POR TURNO</h4>
+                <p>Desvio % médio por horário de trato</p>
+            </div>
+            <div class="chart-box"><canvas id="chart-hours"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <h4>IMPACTO NO ESTOQUE</h4>
+                <p>Saldo real acumulado em kg por item</p>
+            </div>
+            <div class="chart-box"><canvas id="chart-ingredients-kg"></canvas></div>
+        </div>
+        <div class="chart-card full-row">
+            <div class="chart-header">
+                <h4>TENDÊNCIA DIÁRIA</h4>
+                <p>Análise de falhas por dia da semana</p>
+            </div>
+            <div class="chart-box-lg"><canvas id="chart-daily"></canvas></div>
+        </div>
+    </section>
+
+    <section class="filter-glass">
+        <div class="f-group">
+            <label>PERÍODO</label>
+            <div class="range">
+                <input type="date" id="start-date"> <span>até</span> <input type="date" id="end-date">
+            </div>
+        </div>
+        <div class="f-group">
+            <label>ERRO MÍNIMO</label>
+            <input type="number" id="min-error" value="0" step="0.1" class="inp-num"> %
+        </div>
+        <div class="f-group">
+            <label>DIETA</label>
+            <select id="recipe-filter"><option value="">TODAS AS DIETAS</option></select>
+        </div>
+        <button class="btn-reset" onclick="resetFilters()">RESTAURAR VISUALIZAÇÃO</button>
+    </section>
+
+    <section class="log-surface">
+        <div class="table-header-info">
+            <h3>LOG DE OPERAÇÕES <span>ORDEM DE SEVERIDADE</span></h3>
+        </div>
+        <div class="scroll-table-box">
+            <table id="audit-table">
+                <thead>
+                    <tr>
+                        <th>DATA/HORA</th>
+                        <th>RECEITA</th>
+                        <th>PROG. (kg)</th>
+                        <th>MIX (kg)</th>
+                        <th>COCHO (kg)</th>
+                        <th>ERRO %</th>
+                        <th>RESÍDUO</th>
+                        <th>COMPONENTES</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<div id="detail-modal" class="modal">
+    <div class="modal-content">
+        <header class="m-head">
+            <h3>ANÁLISE DE CARGA</h3>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </header>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
