@@ -54,9 +54,11 @@
         .main-container { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 12px; height: 100vh; overflow-y: auto; box-sizing: border-box; }
 
         .gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .gauge-card { background: white; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; border: 1px solid #e2e8f0; position: relative; height: 115px; }
+        .gauge-card { background: white; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; border: 1px solid #e2e8f0; position: relative; height: 125px; }
         .gauge-card label { font-size: 10px; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
-        .gauge-value { position: absolute; bottom: 12px; font-size: 16px; font-weight: 900; }
+        
+        /* Ajuste de margem para o valor não encavalar no velocímetro */
+        .gauge-value { position: absolute; bottom: 10px; font-size: 17px; font-weight: 900; }
 
         .recipe-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .recipe-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
@@ -65,7 +67,7 @@
         .recipe-meta { font-size: 8px; font-weight: 600; color: #cbd5e1; }
         
         .table-wrap { padding: 5px; }
-        table { width: 100%; border-collapse: collapse; font-size: 7px; }
+        table { width: 100%; border-collapse: collapse; font-size: 7.2px; }
         tbody td { padding: 4px 2px; border-bottom: 1px solid #f9f9f9; font-weight: 700; white-space: nowrap; }
 
         .chart-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 10px; min-height: 200px; display: flex; flex-direction: column; }
@@ -173,6 +175,11 @@
         const aliasMap = { 'BAG': 'BAGAÇO DE CANA', 'BOL': 'BOLACHA', 'S': 'SAL', 'M': 'MANDIOCA', 'L': 'LARANJA' };
         const recipeNames = { 1: "Engorda", 2: "Adaptação", 3: "Bezerro" };
 
+        // Função para formatar números com separador de milhar brasileiro
+        function formatBR(val) {
+            return Math.round(val).toLocaleString('pt-BR');
+        }
+
         document.getElementById('wa-number').addEventListener('input', function(e) { this.value = this.value.replace(/\D/g, ''); });
 
         document.getElementById('folder-input').addEventListener('change', async (e) => {
@@ -213,7 +220,11 @@
         }
 
         function createGauge(id, val, color) {
-            return new Chart(document.getElementById(id), { type: 'doughnut', data: { datasets: [{ data: [val, 100 - Math.min(100, val)], backgroundColor: [color, '#e2e8f0'], borderWidth: 0 }] }, options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { datalabels: { display: false } } } });
+            return new Chart(document.getElementById(id), { 
+                type: 'doughnut', 
+                data: { datasets: [{ data: [val, 100 - Math.min(100, val)], backgroundColor: [color, '#e2e8f0'], borderWidth: 0 }] }, 
+                options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { datalabels: { display: false } } } 
+            });
         }
 
         function applySingleDate() { const val = document.getElementById('date-single').value; if(val) { document.getElementById('date-start').value = ""; document.getElementById('date-end').value = ""; render(); } }
@@ -244,7 +255,7 @@
                 
                 rTratos.forEach(t => {
                     rLoss += t.totalLoss; gLoss += t.totalLoss;
-                    if(!daily[t.date]) daily[t.date] = { loss: 0, count: 0, offenders: [] };
+                    if(!daily[t.date]) daily[t.date] = { loss: 0, count: 0 };
                     daily[t.date].loss += t.totalLoss; daily[t.date].count++;
                     t.items.forEach(it => {
                         if(!iTotals[it.name]) iTotals[it.name] = { p: 0, r: 0, d: 0, l: 0 };
@@ -253,23 +264,25 @@
                 });
 
                 document.getElementById(`meta-${id}`).innerText = `${rTratos.length} Receitas`;
-                document.getElementById(`loss-${id}`).innerText = `R$ ${Math.round(rLoss)}`;
-                const avg = rTratos.length > 0 ? (rLoss / rTratos.length).toFixed(2) : "0,00";
+                document.getElementById(`loss-${id}`).innerText = `R$ ${formatBR(rLoss)}`;
+                const avg = rTratos.length > 0 ? (rLoss / rTratos.length).toFixed(2).replace('.', ',') : "0,00";
                 document.getElementById(`avg-${id}`).innerText = `Média: R$ ${avg}/trato`;
 
                 const tbody = document.getElementById(`list-${id}`);
                 tbody.innerHTML = Object.keys(iTotals).sort().map(n => {
                     const d = iTotals[n], efic = d.p > 0 ? Math.max(0, 100-(d.d/d.p*100)) : 0;
                     eSum += efic; eCount++;
-                    return `<tr><td>${n.split(' ')[0]}</td><td>P:${Math.round(d.p)}</td><td>R:${Math.round(d.r)}</td><td class="c-red">Dif:${Math.round(d.d)}kg</td><td class="c-red">R$${d.l.toFixed(0)}</td><td style="text-align:right" class="${efic >= 90 ? 'c-green':'c-red'}">${Math.round(efic)}%</td></tr>`;
+                    return `<tr><td>${n.split(' ')[0]}</td><td>P:${formatBR(d.p)}</td><td>R:${formatBR(d.r)}</td><td class="c-red">Dif:${formatBR(d.d)}kg</td><td class="c-red">R$${formatBR(d.l)}</td><td style="text-align:right" class="${efic >= 90 ? 'c-green':'c-red'}">${Math.round(efic)}%</td></tr>`;
                 }).join('');
             });
 
             const avgE = eCount > 0 ? Math.round(eSum/eCount) : 0;
             if(chartEff) chartEff.destroy(); chartEff = createGauge('gaugeEff', avgE, avgE >= 90 ? '#10b981':'#ef4444');
             document.getElementById('valEff').innerText = avgE+'%';
+            
             if(chartLoss) chartLoss.destroy(); chartLoss = createGauge('gaugeLoss', (gLoss/2000)*100, '#ef4444');
-            document.getElementById('valLoss').innerText = 'Total R$ '+Math.round(gLoss);
+            // Formatação do valor no velocímetro central
+            document.getElementById('valLoss').innerText = 'Total R$ ' + formatBR(gLoss);
 
             const labels = Object.keys(daily).sort();
             const wrapper = document.getElementById('canvas-wrapper');
@@ -282,7 +295,7 @@
                     maintainAspectRatio: false, 
                     plugins: { 
                         legend: { display: false }, 
-                        datalabels: { anchor: 'end', align: 'top', formatter: (v, c) => `R$${Math.round(v)}\n(${daily[labels[c.dataIndex]].count} Tr.)`, font: { size: 7, weight: 'bold' }, textAlign: 'center' } 
+                        datalabels: { anchor: 'end', align: 'top', formatter: (v, c) => `R$${formatBR(v)}\n(${daily[labels[c.dataIndex]].count} Tr.)`, font: { size: 7, weight: 'bold' }, textAlign: 'center' } 
                     },
                     scales: { y: { display: false, beginAtZero: true, max: Math.max(...labels.map(l => daily[l].loss), 10) * 1.5 }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } }
                 }
@@ -301,13 +314,13 @@
             else { filtered = database.filter(d => d.date >= start && d.date <= end); periodStr = `${start.split('-').reverse().join('/')}- ${end.split('-').reverse().join('/')}`; }
             
             let totalLoss = filtered.reduce((acc, t) => acc + t.totalLoss, 0);
-            let msg = `*AUDITORIA DG500*\nPeríodo: ${periodStr}\n*PREJUÍZO: R$ ${totalLoss.toFixed(2)}*\n\n`;
+            let msg = `*AUDITORIA DG500*\nPeríodo: ${periodStr}\n*PREJUÍZO: R$ ${formatBR(totalLoss)}*\n\n`;
             
             [1,2,3].forEach(id => {
                 const tr = filtered.filter(f => parseInt(f.id) === id);
                 if(tr.length) {
                     const l = tr.reduce((a,b) => a + b.totalLoss, 0);
-                    msg += `*${recipeNames[id]}:* ${tr.length} Tratos | Perda: R$ ${l.toFixed(2)} (Média: R$ ${(l/tr.length).toFixed(2)})\n`;
+                    msg += `*${recipeNames[id]}:* ${tr.length} Tratos | Perda: R$ ${formatBR(l)} (Média: R$ ${(l/tr.length).toFixed(2).replace('.', ',')})\n`;
                 }
             });
             window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
