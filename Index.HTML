@@ -19,19 +19,18 @@
             --text-muted: #64748b;
         }
 
-        /* RESET & MOBILE FIX */
         html, body { 
             height: 100%; margin: 0; padding: 0;
             font-family: 'Inter', sans-serif; 
             background-color: var(--main-bg); 
-            overflow: hidden; 
+            overflow: hidden;
             -webkit-text-size-adjust: 100%;
         }
         body { display: flex; flex-direction: row; }
 
-        /* SIDEBAR ADAPTÁVEL */
+        /* SIDEBAR */
         .sidebar {
-            width: 180px; background-color: var(--sidebar-bg); color: white;
+            width: 190px; background-color: var(--sidebar-bg); color: white;
             padding: 15px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0;
             box-shadow: 4px 0 15px rgba(0,0,0,0.2); overflow-y: auto;
             z-index: 100;
@@ -40,111 +39,125 @@
         .logo p { font-size: 8px; color: #94a3b8; margin: 0; text-transform: uppercase; }
 
         .upload-area { background: #1e293b; border: 1px dashed #334155; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; }
-        
-        /* ESPAÇO PARA LOGO (SUBSTITUINDO WHATSAPP) */
-        .brand-area {
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100px;
-        }
-        .brand-area img { 
-            max-width: 100%; 
-            max-height: 110px; 
-            object-fit: contain;
-            -webkit-filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-        }
-
         .field-group { display: flex; flex-direction: column; gap: 4px; }
         .field-group label { font-size: 8px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
         input { background: #1e293b; border: 1px solid #334155; color: white; padding: 8px; border-radius: 6px; font-size: 11px; width: 100%; box-sizing: border-box; outline: none; }
 
-        .btn-accent { background: var(--accent); border: none; padding: 10px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 10px; color: white; width: 100%; }
+        .btn-accent { background: var(--accent); border: none; padding: 10px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 10px; color: white; width: 100%; transition: 0.2s; }
 
-        /* CONTEÚDO PRINCIPAL SCROLLÁVEL NO MOBILE */
+        /* LOGO COM LARGURA TOTAL IDÊNTICA AOS CAMPOS */
+        .brand-area-final {
+            margin-top: 5px;
+            width: 100%; /* Largura total da sidebar */
+            display: flex;
+            justify-content: center;
+            border-top: 1px solid #334155;
+            padding-top: 15px;
+        }
+        .brand-area-final img { 
+            width: 100%; /* Força ocupar a largura total do botão acima */
+            height: auto;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        /* CONTEÚDO */
         .main-container { 
             flex: 1; display: flex; flex-direction: column; gap: 10px; 
             padding: 10px; height: 100vh; overflow-y: auto; 
             box-sizing: border-box; -webkit-overflow-scrolling: touch;
         }
 
-        /* GAUGES COMPACTOS */
         .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-shrink: 0; }
         .kpi-card { background: white; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; align-items: center; border: 1px solid #e2e8f0; position: relative; height: 110px; }
         .kpi-card label { font-size: 9px; font-weight: 900; color: var(--text-muted); text-transform: uppercase; }
         .kpi-value { position: absolute; bottom: 8px; font-size: 15px; font-weight: 900; }
 
-        /* RECEITAS */
         .recipe-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; flex-shrink: 0; }
         .recipe-card { background: white; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .card-header { background: var(--sidebar-bg); color: white; padding: 6px; text-align: center; }
+        .card-header { background: var(--sidebar-bg); color: white; padding: 8px; text-align: center; }
         .card-header h2 { margin: 0; font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--accent); }
+        .recipe-meta { font-size: 8px; font-weight: 600; color: #cbd5e1; }
         
         .table-wrap { padding: 4px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 7px; text-align: center; }
         td { padding: 3px 2px; border-bottom: 1px solid #f1f5f9; font-weight: 700; white-space: nowrap; }
 
-        /* GRAFICO */
         .chart-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 10px; min-height: 180px; display: flex; flex-direction: column; flex-shrink: 0; }
 
-        /* MATRIZ DE ASSERTIVIDADE */
         .assertivity-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 10px; flex-shrink: 0; margin-bottom: 20px; }
         .matrix-scroll { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
         .matrix-table { font-size: 6.5px; min-width: 500px; border-spacing: 2px; border-collapse: separate; }
         .matrix-table th { background: #0f172a; color: white; padding: 4px; border-radius: 3px; }
         .hour-col { background: #f8fafc !important; color: #0f172a !important; font-weight: 900; width: 60px; }
+        
         .cell-high { background: #3b82f6; color: white; border-radius: 3px; }
         .cell-mid { background: #ffffff; color: var(--text-main); border: 1px solid #e2e8f0; border-radius: 3px; }
         .cell-low { background: #fecaca; color: #b91c1c; border-radius: 3px; }
 
-        /* MEDIA QUERIES PARA CELULAR */
-        @media (max-width: 600px) {
+        @media (max-width: 650px) {
             body { flex-direction: column; overflow-y: auto; }
-            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 2px solid var(--accent); }
-            .main-container { height: auto; overflow: visible; }
+            .sidebar { width: 100%; height: auto; border-right: none; }
+            .main-container { height: auto; overflow: visible; padding-bottom: 50px; }
             .recipe-grid { grid-template-columns: 1fr; }
         }
+
+        .c-red { color: var(--danger); }
+        .c-green { color: var(--success); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="logo"><h1>DashFarm</h1><p>Manejo de Precisão</p></div>
+        <div class="logo"><h1>DashFarm</h1><p>Gestão Agropecuária</p></div>
         
         <label class="upload-area">
             <span style="font-size: 8px; font-weight: 800; color: #cbd5e1;">📁 CARREGAR CSV</span>
             <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
         </label>
-
-        <div class="brand-area">
-            <img src="logo.png" alt="Logo" onerror="this.style.opacity='0.2';">
-        </div>
         
         <div class="field-group"><label>Dia Único:</label><input type="date" id="date-single" onchange="applySingleDate()"></div>
-        <div class="field-group"><label>Período:</label><input type="date" id="date-start" onchange="applyRangeDate()"><input type="date" id="date-end" onchange="applyRangeDate()" style="margin-top:2px"></div>
+        <div class="field-group"><label>Início:</label><input type="date" id="date-start" onchange="applyRangeDate()"></div>
+        <div class="field-group"><label>Fim:</label><input type="date" id="date-end" onchange="applyRangeDate()"></div>
+        
         <button class="btn-accent" onclick="clearFilters()">LIMPAR TUDO</button>
 
-        <div id="status-msg" style="font-size:7px; color:var(--success); margin-top: auto; text-align: center;">Sistema Ativo</div>
+        <div class="brand-area-final">
+            <img src="imagem.jpg" alt="Logo Fazenda" onerror="this.style.display='none';">
+        </div>
     </div>
 
     <div class="main-container">
         <div class="kpi-row">
             <div class="kpi-card"><label>Eficiência Geral</label><canvas id="gaugeEff"></canvas><div id="valEff" class="kpi-value">0%</div></div>
-            <div class="kpi-card"><label>Perda Total</label><canvas id="gaugeLoss"></canvas><div id="valLoss" class="kpi-value">R$ 0</div></div>
+            <div class="kpi-card"><label>Desperdício Total</label><canvas id="gaugeLoss"></canvas><div id="valLoss" class="kpi-value">R$ 0</div></div>
         </div>
 
         <div class="recipe-grid">
-            <div class="recipe-card"><div class="card-header"><h2>Engorda</h2><div id="meta-1" style="font-size:7px; color:#cbd5e1;">0 Tratos</div><span id="loss-1" style="font-size:10px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
-            <div class="table-wrap"><table><tbody id="list-1"></tbody></table></div></div>
-            <div class="recipe-card"><div class="card-header"><h2>Adaptação</h2><div id="meta-2" style="font-size:7px; color:#cbd5e1;">0 Tratos</div><span id="loss-2" style="font-size:10px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
-            <div class="table-wrap"><table><tbody id="list-2"></tbody></table></div></div>
-            <div class="recipe-card"><div class="card-header"><h2>Bezerro</h2><div id="meta-3" style="font-size:7px; color:#cbd5e1;">0 Tratos</div><span id="loss-3" style="font-size:10px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
-            <div class="table-wrap"><table><tbody id="list-3"></tbody></table></div></div>
+            <div class="recipe-card">
+                <div class="card-header">
+                    <h2>Engorda</h2>
+                    <div id="meta-1" class="recipe-meta">0 Tratos</div>
+                    <span id="loss-1" style="font-size:10px; color:#ffbcbc; font-weight:900;">R$ 0</span>
+                </div>
+                <div class="table-wrap"><table><tbody id="list-1"></tbody></table></div>
+            </div>
+            <div class="recipe-card">
+                <div class="card-header">
+                    <h2>Adaptação</h2>
+                    <div id="meta-2" class="recipe-meta">0 Tratos</div>
+                    <span id="loss-2" style="font-size:10px; color:#ffbcbc; font-weight:900;">R$ 0</span>
+                </div>
+                <div class="table-wrap"><table><tbody id="list-2"></tbody></table></div>
+            </div>
+            <div class="recipe-card">
+                <div class="card-header">
+                    <h2>Bezerro</h2>
+                    <div id="meta-3" class="recipe-meta">0 Tratos</div>
+                    <span id="loss-3" style="font-size:10px; color:#ffbcbc; font-weight:900;">R$ 0</span>
+                </div>
+                <div class="table-wrap"><table><tbody id="list-3"></tbody></table></div>
+            </div>
         </div>
 
         <div class="chart-section">
@@ -152,7 +165,7 @@
         </div>
 
         <div class="assertivity-section">
-            <div style="font-size:9px; font-weight: 900; color: var(--sidebar-bg); text-transform: uppercase; margin-bottom: 5px;">📊 Matriz de Cargas por Horário (%)</div>
+            <div style="font-size:9px; font-weight: 900; color: var(--sidebar-bg); text-transform: uppercase; margin-bottom: 5px;">📊 Matriz de Assertividade (%)</div>
             <div class="matrix-scroll">
                 <table class="matrix-table">
                     <thead><tr id="matrix-header"><th class="hour-col">HORA</th></tr></thead>
@@ -209,13 +222,14 @@
         }
 
         function createGauge(id, val, color) {
-            return new Chart(document.getElementById(id), { type: 'doughnut', data: { datasets: [{ data: [val, 100 - Math.min(100, val)], backgroundColor: [color, '#e2e8f0'], borderWidth: 0 }] }, options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { datalabels: { display: false }, tooltip: { enabled: false } }, animation: { duration: 500 } } });
+            return new Chart(document.getElementById(id), { type: 'doughnut', data: { datasets: [{ data: [val, 100 - Math.min(100, val)], backgroundColor: [color, '#e2e8f0'], borderWidth: 0 }] }, options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { datalabels: { display: false } }, animation: { duration: 500 } } });
         }
 
         function render() {
             const single = document.getElementById('date-single').value;
             const start = document.getElementById('date-start').value, end = document.getElementById('date-end').value;
             let filtered = single ? database.filter(d => d.date === single) : database.filter(d => d.date >= start && d.date <= end);
+            if (!filtered.length) filtered = database;
 
             let gLoss = 0, eSum = 0, eCount = 0;
             const daily = {}, activeHours = new Set();
@@ -248,7 +262,7 @@
             if(chartEff) chartEff.destroy(); chartEff = createGauge('gaugeEff', avgE, avgE >= 95 ? '#3b82f6':'#ef4444');
             document.getElementById('valEff').innerText = avgE+'%';
             if(chartLoss) chartLoss.destroy(); chartLoss = createGauge('gaugeLoss', (gLoss/2000)*100, '#ef4444');
-            document.getElementById('valLoss').innerText = 'R$ '+formatBR(gLoss);
+            document.getElementById('valLoss').innerText = 'Total R$ ' + formatBR(gLoss);
 
             const sortedDates = Object.keys(daily).sort();
             document.getElementById('matrix-header').innerHTML = '<th class="hour-col">HORA</th>' + sortedDates.map(d => `<th>${d.split('-').reverse().slice(0,2).join('/')}</th>`).join('');
@@ -277,7 +291,12 @@
             });
         }
 
-        function clearFilters() { const dates = database.map(d => d.date).sort(); document.getElementById('date-single').value = ""; document.getElementById('date-start').value = dates[0]; document.getElementById('date-end').value = dates[dates.length-1]; render(); }
+        function clearFilters() { 
+            document.getElementById('date-single').value = ""; 
+            document.getElementById('date-start').value = ""; 
+            document.getElementById('date-end').value = ""; 
+            render(); 
+        }
         function applySingleDate() { document.getElementById('date-start').value = ""; document.getElementById('date-end').value = ""; render(); }
         function applyRangeDate() { document.getElementById('date-single').value = ""; render(); }
     </script>
