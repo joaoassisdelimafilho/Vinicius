@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DashFarm Pro - Auditoria Especializada</title>
+    <title>DashFarm Pro - Auditoria de Impacto</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -60,8 +60,9 @@
 
         .recipe-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .recipe-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .card-header { background: var(--sidebar-bg); color: white; padding: 8px; text-align: center; }
+        .card-header { background: var(--sidebar-bg); color: white; padding: 8px; text-align: center; line-height: 1.1; }
         .card-header h2 { margin: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--accent); }
+        .recipe-meta { font-size: 8px; font-weight: 600; color: #cbd5e1; }
         
         .table-wrap { padding: 5px; }
         table { width: 100%; border-collapse: collapse; font-size: 7px; }
@@ -127,15 +128,30 @@
 
         <div class="recipe-grid">
             <div class="recipe-card">
-                <div class="card-header"><h2>Engorda</h2><span id="loss-1" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
+                <div class="card-header">
+                    <h2>Engorda</h2>
+                    <div id="meta-1" class="recipe-meta">0 Receitas</div>
+                    <span id="loss-1" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span>
+                    <div id="avg-1" class="recipe-meta" style="color:#10b981">Média: R$ 0,00/trato</div>
+                </div>
                 <div class="table-wrap"><table><tbody id="list-1"></tbody></table></div>
             </div>
             <div class="recipe-card">
-                <div class="card-header"><h2>Adaptação</h2><span id="loss-2" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
+                <div class="card-header">
+                    <h2>Adaptação</h2>
+                    <div id="meta-2" class="recipe-meta">0 Receitas</div>
+                    <span id="loss-2" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span>
+                    <div id="avg-2" class="recipe-meta" style="color:#10b981">Média: R$ 0,00/trato</div>
+                </div>
                 <div class="table-wrap"><table><tbody id="list-2"></tbody></table></div>
             </div>
             <div class="recipe-card">
-                <div class="card-header"><h2>Bezerro</h2><span id="loss-3" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
+                <div class="card-header">
+                    <h2>Bezerro</h2>
+                    <div id="meta-3" class="recipe-meta">0 Receitas</div>
+                    <span id="loss-3" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span>
+                    <div id="avg-3" class="recipe-meta" style="color:#10b981">Média: R$ 0,00/trato</div>
+                </div>
                 <div class="table-wrap"><table><tbody id="list-3"></tbody></table></div>
             </div>
         </div>
@@ -200,24 +216,13 @@
             return new Chart(document.getElementById(id), { type: 'doughnut', data: { datasets: [{ data: [val, 100 - Math.min(100, val)], backgroundColor: [color, '#e2e8f0'], borderWidth: 0 }] }, options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { datalabels: { display: false } } } });
         }
 
-        function applySingleDate() {
-            const val = document.getElementById('date-single').value;
-            if(val) {
-                document.getElementById('date-start').value = "";
-                document.getElementById('date-end').value = "";
-                render();
-            }
-        }
-
-        function applyRangeDate() {
-            document.getElementById('date-single').value = "";
-            render();
-        }
+        function applySingleDate() { const val = document.getElementById('date-single').value; if(val) { document.getElementById('date-start').value = ""; document.getElementById('date-end').value = ""; render(); } }
+        function applyRangeDate() { document.getElementById('date-single').value = ""; render(); }
 
         function clearFilters() {
             if (!database.length) return;
             document.getElementById('date-single').value = "";
-            const dates = database.map(d => d.date).filter(d => d.length === 10).sort();
+            const dates = database.map(d => d.date).filter(d => d && d.length === 10).sort();
             document.getElementById('date-start').value = dates[0];
             document.getElementById('date-end').value = dates[dates.length - 1];
             render();
@@ -225,15 +230,10 @@
 
         function render() {
             const single = document.getElementById('date-single').value;
-            const start = document.getElementById('date-start').value;
-            const end = document.getElementById('date-end').value;
-            
+            const start = document.getElementById('date-start').value, end = document.getElementById('date-end').value;
             let filtered = database;
-            if(single) {
-                filtered = database.filter(d => d.date === single);
-            } else if (start && end) {
-                filtered = database.filter(d => d.date >= start && d.date <= end);
-            }
+            if(single) filtered = database.filter(d => d.date === single);
+            else if (start && end) filtered = database.filter(d => d.date >= start && d.date <= end);
 
             let gLoss = 0, eSum = 0, eCount = 0;
             const daily = {};
@@ -241,6 +241,7 @@
             [1,2,3].forEach(id => {
                 const rTratos = filtered.filter(f => parseInt(f.id) === id);
                 const iTotals = {}; let rLoss = 0;
+                
                 rTratos.forEach(t => {
                     rLoss += t.totalLoss; gLoss += t.totalLoss;
                     if(!daily[t.date]) daily[t.date] = { loss: 0, count: 0, offenders: [] };
@@ -248,40 +249,42 @@
                     t.items.forEach(it => {
                         if(!iTotals[it.name]) iTotals[it.name] = { p: 0, r: 0, d: 0, l: 0 };
                         iTotals[it.name].p += it.p; iTotals[it.name].r += it.r; iTotals[it.name].d += it.diff; iTotals[it.name].l += it.loss;
-                        daily[t.date].offenders.push({ name: it.name, loss: it.loss, time: t.time });
                     });
                 });
+
+                document.getElementById(`meta-${id}`).innerText = `${rTratos.length} Receitas`;
+                document.getElementById(`loss-${id}`).innerText = `R$ ${Math.round(rLoss)}`;
+                const avg = rTratos.length > 0 ? (rLoss / rTratos.length).toFixed(2) : "0,00";
+                document.getElementById(`avg-${id}`).innerText = `Média: R$ ${avg}/trato`;
+
                 const tbody = document.getElementById(`list-${id}`);
                 tbody.innerHTML = Object.keys(iTotals).sort().map(n => {
                     const d = iTotals[n], efic = d.p > 0 ? Math.max(0, 100-(d.d/d.p*100)) : 0;
                     eSum += efic; eCount++;
                     return `<tr><td>${n.split(' ')[0]}</td><td>P:${Math.round(d.p)}</td><td>R:${Math.round(d.r)}</td><td class="c-red">Dif:${Math.round(d.d)}kg</td><td class="c-red">R$${d.l.toFixed(0)}</td><td style="text-align:right" class="${efic >= 90 ? 'c-green':'c-red'}">${Math.round(efic)}%</td></tr>`;
                 }).join('');
-                document.getElementById(`loss-${id}`).innerText = `${recipeNames[id]}: R$ ${Math.round(rLoss)}`;
             });
 
             const avgE = eCount > 0 ? Math.round(eSum/eCount) : 0;
             if(chartEff) chartEff.destroy(); chartEff = createGauge('gaugeEff', avgE, avgE >= 90 ? '#10b981':'#ef4444');
             document.getElementById('valEff').innerText = avgE+'%';
             if(chartLoss) chartLoss.destroy(); chartLoss = createGauge('gaugeLoss', (gLoss/2000)*100, '#ef4444');
-            document.getElementById('valLoss').innerText = 'R$ '+Math.round(gLoss);
+            document.getElementById('valLoss').innerText = 'Total R$ '+Math.round(gLoss);
 
             const labels = Object.keys(daily).sort();
-            const dataL = labels.map(l => daily[l].loss), dataC = labels.map(l => daily[l].count);
             const wrapper = document.getElementById('canvas-wrapper');
             wrapper.style.width = labels.length > 8 ? (labels.length * 70) + 'px' : '100%';
-
             if(myChart) myChart.destroy();
             myChart = new Chart(document.getElementById('lossChart'), {
                 type: 'bar',
-                data: { labels: labels.map(l => l.split('-').reverse().join('/')), datasets: [{ data: dataL, backgroundColor: '#ef4444', borderRadius: 4 }] },
+                data: { labels: labels.map(l => l.split('-').reverse().join('/')), datasets: [{ data: labels.map(l => daily[l].loss), backgroundColor: '#ef4444', borderRadius: 4 }] },
                 options: { 
                     maintainAspectRatio: false, 
                     plugins: { 
                         legend: { display: false }, 
-                        datalabels: { anchor: 'end', align: 'top', formatter: (v, c) => `R$${Math.round(v)}\n(${dataC[c.dataIndex]} Tr.)`, font: { size: 7, weight: 'bold' }, textAlign: 'center' } 
+                        datalabels: { anchor: 'end', align: 'top', formatter: (v, c) => `R$${Math.round(v)}\n(${daily[labels[c.dataIndex]].count} Tr.)`, font: { size: 7, weight: 'bold' }, textAlign: 'center' } 
                     },
-                    scales: { y: { display: false, beginAtZero: true, max: Math.max(...dataL, 10) * 1.5 }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } }
+                    scales: { y: { display: false, beginAtZero: true, max: Math.max(...labels.map(l => daily[l].loss), 10) * 1.5 }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } }
                 }
             });
         }
@@ -295,21 +298,17 @@
             let filtered = database;
             let periodStr = "";
             if(single) { filtered = database.filter(d => d.date === single); periodStr = single.split('-').reverse().join('/'); }
-            else { filtered = database.filter(d => d.date >= start && d.date <= end); periodStr = `${start.split('-').reverse().join('/')} a ${end.split('-').reverse().join('/')}`; }
+            else { filtered = database.filter(d => d.date >= start && d.date <= end); periodStr = `${start.split('-').reverse().join('/')}- ${end.split('-').reverse().join('/')}`; }
             
             let totalLoss = filtered.reduce((acc, t) => acc + t.totalLoss, 0);
-            const daily = {};
-            filtered.forEach(t => {
-                if(!daily[t.date]) daily[t.date] = { loss: 0, items: [] };
-                daily[t.date].loss += t.totalLoss;
-                t.items.forEach(it => daily[t.date].items.push({ name: it.name, loss: it.loss, time: t.time }));
-            });
-            const sortedDays = Object.keys(daily).sort((a,b) => daily[b].loss - daily[a].loss).slice(0, 10);
-            let msg = `*AUDITORIA DG500*\nPeríodo: ${periodStr}\n*DESPERDÍCIO: R$ ${totalLoss.toFixed(2)}*\n\n*DIAS CRÍTICOS:*\n`;
-            sortedDays.forEach(date => {
-                msg += `\n📅 *Dia: ${date.split('-').reverse().join('/')} (R$ ${daily[date].loss.toFixed(2)})*\n`;
-                const topItems = daily[date].items.sort((a,b) => b.loss - a.loss).slice(0, 3);
-                topItems.forEach(it => { msg += `- ${it.name} (${it.time}): R$ ${it.loss.toFixed(2)}\n`; });
+            let msg = `*AUDITORIA DG500*\nPeríodo: ${periodStr}\n*PREJUÍZO: R$ ${totalLoss.toFixed(2)}*\n\n`;
+            
+            [1,2,3].forEach(id => {
+                const tr = filtered.filter(f => parseInt(f.id) === id);
+                if(tr.length) {
+                    const l = tr.reduce((a,b) => a + b.totalLoss, 0);
+                    msg += `*${recipeNames[id]}:* ${tr.length} Tratos | Perda: R$ ${l.toFixed(2)} (Média: R$ ${(l/tr.length).toFixed(2)})\n`;
+                }
             });
             window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
         }
