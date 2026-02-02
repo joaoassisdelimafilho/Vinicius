@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DashFarm Pro - Auditoria & WhatsApp Direct</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #0f172a;
+            --main-bg: #f1f5f9;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --whatsapp: #25d366;
+            --text-main: #1e293b;
+        }
+
+        html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background-color: var(--main-bg); overflow: hidden; }
+        body { display: flex; }
+
+        .sidebar {
+            width: 190px; background-color: var(--sidebar-bg); color: white;
+            padding: 15px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+        }
+        .logo h1 { font-size: 18px; font-weight: 900; color: var(--accent); margin: 0; }
+        .logo p { font-size: 8px; color: #94a3b8; margin: 0; text-transform: uppercase; }
+
+        .upload-area {
+            background: #1e293b; border: 1px dashed #334155; padding: 10px;
+            border-radius: 8px; text-align: center; cursor: pointer;
+        }
+
+        .field-group { display: flex; flex-direction: column; gap: 4px; }
+        .field-group label { font-size: 8px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        
+        .wa-input-container { position: relative; }
+        .wa-input-container span { position: absolute; left: 8px; top: 8px; font-size: 11px; color: #64748b; font-weight: 700; }
+        .wa-input-container input { padding-left: 28px !important; }
+
+        input { background: #1e293b; border: 1px solid #334155; color: white; padding: 8px; border-radius: 6px; font-size: 11px; width: 100%; box-sizing: border-box; }
+
+        .btn { border: none; padding: 10px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 10px; transition: 0.3s; width: 100%; color: white; }
+        .btn-accent { background: var(--accent); }
+        .btn-whatsapp { background: var(--whatsapp); box-shadow: 0 4px 10px rgba(37, 211, 102, 0.2); }
+        
+        .custom-logo-container { 
+            margin-top: auto; 
+            padding: 15px 0; 
+            border-top: 1px solid #334155; 
+            display: flex; 
+            justify-content: center; 
+        }
+        .custom-logo-container img { max-width: 100%; max-height: 80px; object-fit: contain; }
+
+        .main-container { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 12px; height: 100vh; overflow-y: auto; box-sizing: border-box; }
+
+        .gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .gauge-card { background: white; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; border: 1px solid #e2e8f0; position: relative; height: 115px; }
+        .gauge-card label { font-size: 10px; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; }
+        .gauge-value { position: absolute; bottom: 12px; font-size: 16px; font-weight: 900; }
+
+        .recipe-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .recipe-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .card-header { background: var(--sidebar-bg); color: white; padding: 6px; text-align: center; }
+        
+        .table-wrap { padding: 5px; }
+        table { width: 100%; border-collapse: collapse; font-size: 7.2px; }
+        tbody td { padding: 4px 2px; border-bottom: 1px solid #f9f9f9; font-weight: 700; white-space: nowrap; }
+
+        .chart-section { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 10px; min-height: 200px; display: flex; flex-direction: column; }
+        .chart-scroll-container { flex: 1; overflow-x: auto; overflow-y: hidden; position: relative; }
+        
+        .c-red { color: var(--danger); }
+        .c-green { color: var(--success); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo"><h1>DashFarm</h1><p>Precisão Operacional</p></div>
+        
+        <label class="upload-area">
+            <span style="font-size: 9px; font-weight: 800; color: #cbd5e1;">📁 PASTA CSV</span>
+            <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
+        </label>
+        
+        <div class="field-group">
+            <label>Filtrar Período:</label>
+            <input type="date" id="date-start" onchange="render()">
+            <input type="date" id="date-end" onchange="render()" style="margin-top:2px">
+        </div>
+
+        <button class="btn btn-accent" onclick="clearFilters()" style="margin-top: 5px;">LIMPAR FILTROS</button>
+
+        <div class="field-group" style="margin-top: 15px;">
+            <label>WhatsApp do Dono:</label>
+            <div class="wa-input-container">
+                <span>+55</span>
+                <input type="text" id="wa-number" placeholder="DDD + Número" maxlength="11">
+            </div>
+        </div>
+        <button class="btn btn-whatsapp" onclick="sendWhatsApp()">📱 ENVIAR RELATÓRIO</button>
+
+        <div class="custom-logo-container">
+            <img src="logo.png" alt="Logo Fazenda" onerror="this.style.display='none'">
+        </div>
+        
+        <div id="status-msg" style="font-size:8px; color:var(--success); margin-top: 10px;">Pronto.</div>
+    </div>
+
+    <div class="main-container">
+        <div class="gauge-row">
+            <div class="gauge-card">
+                <label>Eficiência</label>
+                <canvas id="gaugeEff"></canvas>
+                <div id="valEff" class="gauge-value">0%</div>
+            </div>
+            <div class="gauge-card">
+                <label>Desperdício</label>
+                <canvas id="gaugeLoss"></canvas>
+                <div id="valLoss" class="gauge-value">R$ 0</div>
+            </div>
+        </div>
+
+        <div class="recipe-grid">
+            <div class="recipe-card"><div class="card-header"><span id="loss-1" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
+            <div class="table-wrap"><table><tbody id="list-1"></tbody></table></div></div>
+            <div class="recipe-card"><div class="card-header"><span id="loss-2" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
+            <div class="table-wrap"><table><tbody id="list-2"></tbody></table></div></div>
+            <div class="recipe-card"><div class="card-header"><span id="loss-3" style="font-size:11px; color:#ffbcbc; font-weight:900;">R$ 0</span></div>
+            <div class="table-wrap"><table><tbody id="list-3"></tbody></table></div></div>
+        </div>
+
+        <div class="chart-section">
+            <div class="chart-scroll-container">
+                <div id="canvas-wrapper" style="height:100%; min-width:100%;">
+                    <canvas id="lossChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        let database = [];
+        let myChart = null, chartEff = null, chartLoss = null;
+        const costs = { 'BAGAÇO DE CANA': 0.10, 'BOLACHA': 0.95, 'SOJA': 1.38, 'MANDIOCA': 0.10, 'LARANJA': 0.06, 'SAL': 3.16, 'UREIA': 2.90 };
+        const aliasMap = { 'BAG': 'BAGAÇO DE CANA', 'BOL': 'BOLACHA', 'S': 'SAL', 'M': 'MANDIOCA', 'L': 'LARANJA' };
+
+        document.getElementById('wa-number').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '');
+        });
+
+        document.getElementById('folder-input').addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files).filter(f => f.name.toLowerCase().endsWith('.csv'));
+            database = [];
+            for (const file of files) {
+                await new Promise(resolve => { Papa.parse(file, { delimiter: ";", encoding: "ISO-8859-1", skipEmptyLines: true, complete: function(res) { parseFile(res.data); resolve(); } }); });
+            }
+            if (database.length) {
+                const dates = database.map(d => d.date).filter(d => d.length === 10).sort();
+                document.getElementById('date-start').value = dates[0];
+                document.getElementById('date-end').value = dates[dates.length - 1];
+                render();
+            }
+        });
+
+        function parseFile(rows) {
+            let recipe = null;
+            rows.forEach((row, i) => {
+                if (row[0] && row[0].toLowerCase().includes("dados da receita")) {
+                    const dr = rows[i+2];
+                    if (dr && dr[1]) {
+                        let rd = dr[3].toString().trim();
+                        if (rd.includes('/')) { const p = rd.split('/'); rd = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`; }
+                        recipe = { id: dr[1].toString().trim(), date: rd, time: dr[4] || "00:00", items: [], totalLoss: 0 };
+                    }
+                }
+                if (row[0] && row[0].toLowerCase().includes("dados dos componentes") && recipe) {
+                    let j = i + 2;
+                    while (rows[j] && !isNaN(rows[j][0]) && rows[j][0] !== "") {
+                        const name = aliasMap[rows[j][1].trim().toUpperCase()] || rows[j][1].trim().toUpperCase();
+                        if (costs[name]) {
+                            const p = parseFloat(rows[j][2].toString().replace(',','.'))||0, r = parseFloat(rows[j][3].toString().replace(',','.'))||0;
+                            const diff = Math.abs(r-p);
+                            recipe.items.push({ name, p, r, diff, loss: diff * costs[name] });
+                            recipe.totalLoss += (diff * costs[name]);
+                        }
+                        j++;
+                    }
+                }
+            });
+            if (recipe && recipe.items.length > 0) database.push(recipe);
+        }
+
+        function createGauge(id, val, color) {
+            return new Chart(document.getElementById(id), { type: 'doughnut', data: { datasets: [{ data: [val, 100 - Math.min(100, val)], backgroundColor: [color, '#e2e8f0'], borderWidth: 0 }] }, options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { datalabels: { display: false } } } });
+        }
+
+        function render() {
+            const start = document.getElementById('date-start').value, end = document.getElementById('date-end').value;
+            let filtered = database.filter(d => d.date >= start && d.date <= end);
+            let gLoss = 0, eSum = 0, eCount = 0;
+            const daily = {};
+
+            [1,2,3].forEach(id => {
+                const rTratos = filtered.filter(f => parseInt(f.id) === id);
+                const iTotals = {}; let rLoss = 0;
+                rTratos.forEach(t => {
+                    rLoss += t.totalLoss; gLoss += t.totalLoss;
+                    if(!daily[t.date]) daily[t.date] = { loss: 0, count: 0, offenders: [] };
+                    daily[t.date].loss += t.totalLoss; daily[t.date].count++;
+                    t.items.forEach(it => {
+                        if(!iTotals[it.name]) iTotals[it.name] = { p: 0, r: 0, d: 0, l: 0 };
+                        iTotals[it.name].p += it.p; iTotals[it.name].r += it.r; iTotals[it.name].d += it.diff; iTotals[it.name].l += it.loss;
+                        daily[t.date].offenders.push({ name: it.name, loss: it.loss, time: t.time });
+                    });
+                });
+                const tbody = document.getElementById(`list-${id}`);
+                tbody.innerHTML = Object.keys(iTotals).sort().map(n => {
+                    const d = iTotals[n], efic = d.p > 0 ? Math.max(0, 100-(d.d/d.p*100)) : 0;
+                    eSum += efic; eCount++;
+                    return `<tr><td>${n.split(' ')[0]}</td><td>P:${Math.round(d.p)}</td><td>R:${Math.round(d.r)}</td><td class="c-red">Dif:${Math.round(d.d)}kg</td><td class="c-red">R$${d.l.toFixed(0)}</td><td style="text-align:right" class="${efic >= 90 ? 'c-green':'c-red'}">${Math.round(efic)}%</td></tr>`;
+                }).join('');
+                document.getElementById(`loss-${id}`).innerText = `Receita ${id}: R$ ${Math.round(rLoss)}`;
+            });
+
+            const avgE = eCount > 0 ? Math.round(eSum/eCount) : 0;
+            if(chartEff) chartEff.destroy(); chartEff = createGauge('gaugeEff', avgE, avgE >= 90 ? '#10b981':'#ef4444');
+            document.getElementById('valEff').innerText = avgE+'%';
+            if(chartLoss) chartLoss.destroy(); chartLoss = createGauge('gaugeLoss', (gLoss/2000)*100, '#ef4444');
+            document.getElementById('valLoss').innerText = 'R$ '+Math.round(gLoss);
+
+            const labels = Object.keys(daily).sort();
+            const dataL = labels.map(l => daily[l].loss), dataC = labels.map(l => daily[l].count);
+            const wrapper = document.getElementById('canvas-wrapper');
+            wrapper.style.width = labels.length > 8 ? (labels.length * 70) + 'px' : '100%';
+
+            if(myChart) myChart.destroy();
+            myChart = new Chart(document.getElementById('lossChart'), {
+                type: 'bar',
+                data: { labels: labels.map(l => l.split('-').reverse().join('/')), datasets: [{ data: dataL, backgroundColor: '#ef4444', borderRadius: 4 }] },
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { anchor: 'end', align: 'top', formatter: (v, c) => `R$${Math.round(v)}\n(${dataC[c.dataIndex]} Tr.)`, font: { size: 7, weight: 'bold' }, textAlign: 'center' } 
+                    },
+                    scales: { y: { display: false, beginAtZero: true, max: Math.max(...dataL, 10) * 1.5 }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } }
+                }
+            });
+        }
+
+        function sendWhatsApp() {
+            let num = document.getElementById('wa-number').value.replace(/\D/g, '');
+            if(!num || num.length < 10) { alert("Digite o DDD + Número"); return; }
+            if(!num.startsWith('55')) num = '55' + num;
+
+            const start = document.getElementById('date-start').value, end = document.getElementById('date-end').value;
+            let filtered = database.filter(d => d.date >= start && d.date <= end);
+            let totalLoss = filtered.reduce((acc, t) => acc + t.totalLoss, 0);
+            const daily = {};
+            filtered.forEach(t => {
+                if(!daily[t.date]) daily[t.date] = { loss: 0, items: [] };
+                daily[t.date].loss += t.totalLoss;
+                t.items.forEach(it => daily[t.date].items.push({ name: it.name, loss: it.loss, time: t.time }));
+            });
+            const sortedDays = Object.keys(daily).sort((a,b) => daily[b].loss - daily[a].loss).slice(0, 10);
+            let msg = `*AUDITORIA DG500*\nPeríodo: ${start.split('-').reverse().join('/')} a ${end.split('-').reverse().join('/')}\n*DESPERDÍCIO: R$ ${totalLoss.toFixed(2)}*\n\n*DIAS CRÍTICOS:*\n`;
+            sortedDays.forEach(date => {
+                msg += `\n📅 *Dia: ${date.split('-').reverse().join('/')} (R$ ${daily[date].loss.toFixed(2)})*\n`;
+                const topItems = daily[date].items.sort((a,b) => b.loss - a.loss).slice(0, 3);
+                topItems.forEach(it => { msg += `- ${it.name} (${it.time}): R$ ${it.loss.toFixed(2)}\n`; });
+            });
+            window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function clearFilters() { if(database.length) render(); }
+    </script>
+</body>
+</html>
