@@ -3,80 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sítio São Sebastião - Importação</title>
+    <title>Sítio São Sebastião - Sincronizador DG500</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: 'Inter', sans-serif; background: #020617; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .admin-card { background: rgba(15, 23, 42, 0.9); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 400px; text-align: center; backdrop-filter: blur(20px); }
-        input { width: 100%; height: 48px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; padding: 0 15px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
-        .drop-zone { border: 2px dashed #3b82f6; padding: 30px; border-radius: 16px; cursor: pointer; margin: 15px 0; background: rgba(59, 130, 246, 0.05); }
-        .btn-process { width: 100%; height: 50px; background: #3b82f6; border: none; border-radius: 12px; color: white; font-weight: 800; text-transform: uppercase; cursor: pointer; }
-        #status { margin-top: 15px; font-size: 11px; color: #94a3b8; }
+        :root { --accent: #3b82f6; --glass: rgba(15, 23, 42, 0.9); --border: rgba(255, 255, 255, 0.1); }
+        body { font-family: 'Inter', sans-serif; background: #020617; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .admin-card { background: var(--glass); padding: 30px; border-radius: 24px; border: 1px solid var(--border); text-align: center; width: 90%; max-width: 450px; backdrop-filter: blur(20px); }
+        .drop-zone { border: 2px dashed #3b82f6; padding: 40px 20px; border-radius: 16px; cursor: pointer; margin: 20px 0; background: rgba(59, 130, 246, 0.05); }
+        .btn-import { width: 100%; height: 55px; background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%); color: white; border: none; border-radius: 12px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
+        #status { margin-top: 15px; font-size: 11px; color: #94a3b8; white-space: pre-wrap; text-align: left; }
     </style>
 </head>
 <body>
+
 <div class="admin-card">
-    <img src="imagen.png" style="width:100px; mix-blend-mode:lighten; margin-bottom:10px;">
-    <h2 style="font-size:16px; text-transform:uppercase;">Sincronizar DG500</h2>
-    <input type="email" id="email" placeholder="E-mail">
-    <input type="password" id="pass" placeholder="Senha">
+    <img src="imagen.png" style="width:80px; mix-blend-mode:lighten; margin-bottom:15px;">
+    <h2 style="font-weight:900; color:var(--accent); margin:0;">SINCRONIZAR DG500</h2>
+    
     <div class="drop-zone" onclick="document.getElementById('file-input').click()">
-        <span id="label">Selecionar Pasta da Balança</span>
+        <span id="label">SELECIONAR PASTA COM OS CSVs</span>
         <input type="file" id="file-input" multiple webkitdirectory directory style="display:none;">
     </div>
-    <button class="btn-process" onclick="handleImport()">Sincronizar Banco de Dados</button>
+
+    <button class="btn-import" onclick="processFiles()">Enviar para o Painel</button>
     <div id="status"></div>
-    <a href="index.html" style="color:#64748b; text-decoration:none; font-size:10px; display:block; margin-top:20px; font-weight:800;">VOLTAR AO PAINEL</a>
+    <a href="index.html" style="display: block; margin-top: 20px; color: #64748b; text-decoration: none; font-size: 10px; font-weight: 800; text-transform: uppercase;">← Voltar ao Dashboard</a>
 </div>
 
 <script>
+    const costs = { 'BAGAÇO DE CANA': 0.10, 'BOLACHA': 0.95, 'SOJA': 1.38, 'MANDIOCA': 0.10, 'LARANJA': 0.06, 'SAL': 3.16, 'UREIA': 2.90, 'SILO': 0.20 };
+    const aliasMap = { 'BAG': 'BAGAÇO DE CANA', 'BOL': 'BOLACHA', 'S': 'SAL', 'M': 'MANDIOCA', 'L': 'LARANJA' };
+
     const firebaseConfig = { apiKey: "AIzaSyBP_0G13P-jJAaZe0XFi_0Mtp3l02-cAc4", authDomain: "fazenda-e5e25.firebaseapp.com", projectId: "fazenda-e5e25", storageBucket: "fazenda-e5e25.firebasestorage.app", messagingSenderId: "531227081563", appId: "1:531227081563:web:391f17caa7e7be090d387e" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    async function handleImport() {
-        const email = document.getElementById('email').value;
-        const pass = document.getElementById('pass').value;
-        const files = document.getElementById('file-input').files;
+    // Garante que o usuário está logado antes de processar
+    let currentUser = null;
+    firebase.auth().onAuthStateChanged(user => { 
+        if (!user) window.location.href = "login.html"; 
+        else currentUser = user;
+    });
+
+    async function processFiles() {
+        const input = document.getElementById('file-input');
         const status = document.getElementById('status');
-        if (!email || !pass || files.length === 0) { status.innerText = "Preencha tudo!"; return; }
+        if (!currentUser) { status.innerText = "❌ Erro: Você não está autenticado!"; return; }
+        if (input.files.length === 0) { status.innerText = "❌ Selecione a pasta!"; return; }
 
-        try {
-            await firebase.auth().signInWithEmailAndPassword(email, pass);
-            status.innerText = "🚀 Processando...";
+        status.innerText = "⏳ Lendo arquivos...";
+        let count = 0;
+
+        for (let file of input.files) {
+            if (!file.name.toLowerCase().endsWith('.csv')) continue;
+
+            const text = await file.text();
+            const lines = text.split(/\r?\n/);
             
-            for (let file of files) {
-                if (!file.name.toLowerCase().endsWith('.csv')) continue;
-                const text = await file.text();
-                const lines = text.split(/\r?\n/);
-                const batch = db.batch();
+            let dataFormatada = "";
+            let idReceita = "";
+            let items = [];
+            let readingComponents = false;
+            let totalP = 0, totalR = 0, totalLoss = 0;
 
-                for (let i = 1; i < lines.length; i++) {
-                    const col = lines[i].split(/[;,]/);
-                    if (col.length < 5) continue;
+            for (let line of lines) {
+                const col = line.split(';');
 
-                    const p = parseFloat(col[3].replace(',', '.')) || 0;
-                    const r = parseFloat(col[4].replace(',', '.')) || 0;
-                    const docRef = db.collection("auditoria").doc();
-                    
-                    batch.set(docRef, {
-                        date: col[0].trim(), // Data: YYYY-MM-DD
-                        id: col[1].trim(),   // ID da Receita
-                        totalP: p,
-                        totalR: r,
-                        totalLoss: Math.abs(p - r) * 1.5,
-                        items: [], // Se o CSV tiver itens, a lógica de extração entra aqui
+                // Captura Data e ID da Receita (baseado na linha 5 do seu arquivo)
+                if (col.length >= 4 && col[3].includes('/')) {
+                    const rawDate = col[3].trim().split('/');
+                    dataFormatada = `${rawDate[2]}-${rawDate[1].padStart(2,'0')}-${rawDate[0].padStart(2,'0')}`;
+                    idReceita = col[1].trim();
+                }
+
+                if (line.includes("Dados dos componentes")) { readingComponents = true; continue; }
+                if (readingComponents && (line.trim() === "" || line.includes("Data;"))) { readingComponents = false; }
+
+                // Captura os itens (baseado na linha 11 do seu arquivo)
+                if (readingComponents && col.length >= 4 && !isNaN(parseFloat(col[2]))) {
+                    let rawName = col[1].trim().toUpperCase();
+                    let nomeReal = aliasMap[rawName] || rawName;
+                    let p = parseFloat(col[2].replace(',', '.')) || 0;
+                    let r = parseFloat(col[3].replace(',', '.')) || 0;
+                    let diff = Math.abs(p - r);
+                    let preco = costs[nomeReal] || 0;
+                    let loss = diff * preco;
+
+                    totalP += p; totalR += r; totalLoss += loss;
+                    items.push({ name: nomeReal, p, r, diff, loss });
+                }
+            }
+
+            if (dataFormatada && items.length > 0) {
+                try {
+                    await db.collection("auditoria").add({
+                        date: dataFormatada,
+                        id: parseInt(idReceita),
+                        totalP, totalR, totalLoss,
+                        items,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    count++;
+                    status.innerText = `⏳ Arquivos sincronizados: ${count}...`;
+                } catch (e) { 
+                    status.innerText = "❌ Erro de Permissão: " + e.message;
+                    return; 
                 }
-                await batch.commit();
             }
-            status.innerText = "✅ Sincronizado com sucesso!";
-            setTimeout(() => window.location.href="index.html", 1500);
-        } catch (e) { status.innerText = "Erro: " + e.message; }
+        }
+        status.innerHTML = `<b style="color:#10b981;">✅ SUCESSO!</b><br>${count} tratos integrados.`;
+        setTimeout(() => window.location.href = "index.html", 1500);
     }
 </script>
 </body>
