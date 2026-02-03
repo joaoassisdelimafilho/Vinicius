@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
     <title>Sítio São Sebastião - Login</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
@@ -18,7 +19,7 @@
             padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
             width: 90%; max-width: 380px; text-align: center;
         }
-        .logo { width: 150px; mix-blend-mode: lighten; margin-bottom: 20px; }
+        .logo { width: 80px; margin-bottom: 20px; border-radius: 15px; }
         input {
             width: 100%; height: 50px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px; color: white; padding: 0 15px; margin-bottom: 15px; box-sizing: border-box; outline: none;
@@ -37,14 +38,27 @@
         <button onclick="login()">Entrar no Painel</button>
     </div>
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyBP_0G13P-jJAaZe0XFi_0Mtp3l02-cAc4", authDomain: "fazenda-e5e25.firebaseapp.com", projectId: "fazenda-e5e25", storageBucket: "fazenda-e5e25.firebasestorage.app", messagingSenderId: "531227081563", appId: "1:531227081563:web:391f17caa7e7be090d387e" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBP_0G13P-jJAaZe0XFi_0Mtp3l02-cAc4",
+            authDomain: "fazenda-e5e25.firebaseapp.com",
+            projectId: "fazenda-e5e25",
+            storageBucket: "fazenda-e5e25.firebasestorage.app",
+            messagingSenderId: "531227081563",
+            appId: "1:531227081563:web:391f17caa7e7be090d387e"
+        };
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
         function login() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            firebase.auth().signInWithEmailAndPassword(email, pass)
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('pass').value;
+            auth.signInWithEmailAndPassword(e, p)
                 .then(() => window.location.href = "index.html")
-                .catch(() => alert("Acesso negado!"));
+                .catch(err => alert("Erro: " + err.message));
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
         }
     </script>
 </body>

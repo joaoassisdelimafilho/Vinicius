@@ -1,0 +1,20 @@
+{
+  "name": "Sítio São Sebastião",
+  "short_name": "Sítio SS",
+  "start_url": "login.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "imagen.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "imagen.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
