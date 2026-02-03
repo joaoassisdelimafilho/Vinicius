@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sítio São Sebastião - Importação DG500</title>
+    <title>Sítio São Sebastião - Importação</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
@@ -14,102 +14,69 @@
         input { width: 100%; height: 48px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; padding: 0 15px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
         .drop-zone { border: 2px dashed #3b82f6; padding: 30px; border-radius: 16px; cursor: pointer; margin: 15px 0; background: rgba(59, 130, 246, 0.05); }
         .btn-process { width: 100%; height: 50px; background: #3b82f6; border: none; border-radius: 12px; color: white; font-weight: 800; text-transform: uppercase; cursor: pointer; }
-        #status { margin-top: 15px; font-size: 12px; white-space: pre-wrap; }
+        #status { margin-top: 15px; font-size: 11px; color: #94a3b8; }
     </style>
 </head>
 <body>
-
 <div class="admin-card">
     <img src="imagen.png" style="width:100px; mix-blend-mode:lighten; margin-bottom:10px;">
-    <h2>Sincronizar DG500</h2>
-    
+    <h2 style="font-size:16px; text-transform:uppercase;">Sincronizar DG500</h2>
     <input type="email" id="email" placeholder="E-mail">
     <input type="password" id="pass" placeholder="Senha">
-
     <div class="drop-zone" onclick="document.getElementById('file-input').click()">
         <span id="label">Selecionar Pasta da Balança</span>
         <input type="file" id="file-input" multiple webkitdirectory directory style="display:none;">
     </div>
-
-    <button class="btn-process" onclick="handleImport()">Sincronizar Agora</button>
+    <button class="btn-process" onclick="handleImport()">Sincronizar Banco de Dados</button>
     <div id="status"></div>
-    <a href="index.html" style="color:#64748b; text-decoration:none; font-size:10px; display:block; margin-top:20px; font-weight:800;">VOLTAR</a>
+    <a href="index.html" style="color:#64748b; text-decoration:none; font-size:10px; display:block; margin-top:20px; font-weight:800;">VOLTAR AO PAINEL</a>
 </div>
 
 <script>
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBP_0G13P-jJAaZe0XFi_0Mtp3l02-cAc4", 
-        authDomain: "fazenda-e5e25.firebaseapp.com", 
-        projectId: "fazenda-e5e25", 
-        storageBucket: "fazenda-e5e25.firebasestorage.app", 
-        messagingSenderId: "531227081563", 
-        appId: "1:531227081563:web:391f17caa7e7be090d387e" 
-    };
+    const firebaseConfig = { apiKey: "AIzaSyBP_0G13P-jJAaZe0XFi_0Mtp3l02-cAc4", authDomain: "fazenda-e5e25.firebaseapp.com", projectId: "fazenda-e5e25", storageBucket: "fazenda-e5e25.firebasestorage.app", messagingSenderId: "531227081563", appId: "1:531227081563:web:391f17caa7e7be090d387e" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const auth = firebase.auth();
 
     async function handleImport() {
         const email = document.getElementById('email').value;
         const pass = document.getElementById('pass').value;
         const files = document.getElementById('file-input').files;
         const status = document.getElementById('status');
-
-        if (!email || !pass || files.length === 0) {
-            status.innerHTML = "❌ Preencha tudo e selecione a pasta.";
-            return;
-        }
+        if (!email || !pass || files.length === 0) { status.innerText = "Preencha tudo!"; return; }
 
         try {
-            status.innerHTML = "⏳ Autenticando...";
-            await auth.signInWithEmailAndPassword(email, pass);
+            await firebase.auth().signInWithEmailAndPassword(email, pass);
+            status.innerText = "🚀 Processando...";
             
-            status.innerHTML = `🚀 Lendo ${files.length} arquivos...`;
-            let filesProcessed = 0;
-
             for (let file of files) {
                 if (!file.name.toLowerCase().endsWith('.csv')) continue;
-
                 const text = await file.text();
-                const lines = text.split(/\r?\n/); // Suporta quebra de linha Windows e Linux
+                const lines = text.split(/\r?\n/);
                 const batch = db.batch();
 
-                // Começa do 1 para pular o cabeçalho do CSV
                 for (let i = 1; i < lines.length; i++) {
-                    const col = lines[i].split(/[;,]/); // Suporta vírgula ou ponto-e-vírgula
-                    
+                    const col = lines[i].split(/[;,]/);
                     if (col.length < 5) continue;
 
-                    // MAPEAMENTO DG500: Ajuste as colunas conforme seu arquivo real
-                    const dataFormatada = col[0].trim(); 
-                    const idReceita = col[1].trim();
-                    const programado = parseFloat(col[3].replace(',', '.')) || 0;
-                    const realizado = parseFloat(col[4].replace(',', '.')) || 0;
-                    const diferenca = Math.abs(programado - realizado);
-
+                    const p = parseFloat(col[3].replace(',', '.')) || 0;
+                    const r = parseFloat(col[4].replace(',', '.')) || 0;
                     const docRef = db.collection("auditoria").doc();
+                    
                     batch.set(docRef, {
-                        date: dataFormatada,
-                        id: idReceita,
-                        totalP: programado,
-                        totalR: realizado,
-                        totalLoss: diferenca * 1.5, // Valor estimado de perda por kg
+                        date: col[0].trim(), // Data: YYYY-MM-DD
+                        id: col[1].trim(),   // ID da Receita
+                        totalP: p,
+                        totalR: r,
+                        totalLoss: Math.abs(p - r) * 1.5,
+                        items: [], // Se o CSV tiver itens, a lógica de extração entra aqui
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                
                 await batch.commit();
-                filesProcessed++;
-                status.innerHTML = `⏳ Sincronizando: ${filesProcessed} de ${files.length}...`;
             }
-
-            status.innerHTML = "✅ Sincronização Concluída!";
-            setTimeout(() => window.location.href = "index.html", 2000);
-
-        } catch (error) {
-            status.innerHTML = "❌ Erro: " + error.message;
-            console.error(error);
-        }
+            status.innerText = "✅ Sincronizado com sucesso!";
+            setTimeout(() => window.location.href="index.html", 1500);
+        } catch (e) { status.innerText = "Erro: " + e.message; }
     }
 </script>
 </body>
