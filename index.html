@@ -31,6 +31,7 @@
         .filters-container { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         input, .btn-nav { height: 38px; border-radius: 10px; font-size: 11px; width: 100%; box-sizing: border-box; }
         input { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0 8px; outline: none; }
+        input:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-nav { background: var(--accent); color: white; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 11px; }
 
         /* KPIs */
@@ -69,7 +70,7 @@
         <div class="filters-container">
             <div class="filter-group"><label>Início</label><input type="date" id="date-start" onchange="loadData()"></div>
             <div class="filter-group"><label>Fim</label><input type="date" id="date-end" onchange="loadData()"></div>
-            <button class="btn-nav" style="grid-column: span 2;" onclick="location.reload()">LIMPAR FILTROS</button>
+            <button class="btn-nav" style="grid-column: span 2;" onclick="clearFilters()">LIMPAR FILTROS</button>
         </div>
     </div>
 
@@ -106,15 +107,69 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     let performanceChart = null;
+    let minDateAvailable = null;
+    let maxDateAvailable = null;
 
-    firebase.auth().onAuthStateChanged(user => { if (user) loadData(); else window.location.href = "login.html"; });
+    // Configura persistência local (o usuário permanece logado até fazer logout)
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            firebase.auth().onAuthStateChanged(user => { 
+                if (user) {
+                    initDashboard();
+                } else {
+                    window.location.href = "login.html"; 
+                }
+            });
+        });
+
+    async function initDashboard() {
+        // Busca as datas limites disponíveis no banco
+        await updateDateLimits();
+        loadData();
+    }
+
+    async function updateDateLimits() {
+        // Busca a data mais antiga e a mais recente para travar o calendário
+        const firstSnap = await db.collection("auditoria").orderBy("date", "asc").limit(1).get();
+        const lastSnap = await db.collection("auditoria").orderBy("date", "desc").limit(1).get();
+        
+        if (!firstSnap.empty) {
+            minDateAvailable = firstSnap.docs[0].data().date;
+            document.getElementById('date-start').min = minDateAvailable;
+            document.getElementById('date-end').min = minDateAvailable;
+        }
+        
+        if (!lastSnap.empty) {
+            maxDateAvailable = lastSnap.docs[0].data().date;
+            document.getElementById('date-start').max = maxDateAvailable;
+            document.getElementById('date-end').max = maxDateAvailable;
+        }
+    }
 
     async function loadData() {
-        const snap = await db.collection("auditoria").orderBy("timestamp", "desc").limit(300).get();
-        let data = []; snap.forEach(doc => data.push(doc.data()));
-        const s = document.getElementById('date-start').value, e = document.getElementById('date-end').value;
-        if (s && e) data = data.filter(d => d.date >= s && d.date <= e);
+        let query = db.collection("auditoria").orderBy("date", "desc");
+        
+        const s = document.getElementById('date-start').value;
+        const e = document.getElementById('date-end').value;
+        
+        // Se houver filtros, aplica na query do Firestore para eficiência
+        if (s) query = query.where("date", ">=", s);
+        if (e) query = query.where("date", "<=", e);
+        
+        const snap = await query.limit(300).get();
+        let data = []; 
+        snap.forEach(doc => data.push(doc.data()));
+        
+        // Ordena por data para o gráfico (Firestore desc, mas gráfico prefere asc)
+        data.sort((a, b) => a.date.localeCompare(b.date));
+        
         renderDashboard(data);
+    }
+
+    function clearFilters() {
+        document.getElementById('date-start').value = "";
+        document.getElementById('date-end').value = "";
+        loadData();
     }
 
     function renderDashboard(data) {
@@ -123,6 +178,11 @@
         const recipeMap = { 1: "ENGORDA", 2: "ADAPTAÇÃO", 3: "BEZERRO" };
         const container = document.getElementById('audit-container');
         container.innerHTML = "";
+
+        if (data.length === 0) {
+            container.innerHTML = "<div style='padding: 20px; color: #94a3b8;'>Nenhum dado encontrado para este período.</div>";
+            return;
+        }
 
         [1, 2, 3].forEach(id => {
             const tratos = data.filter(d => parseInt(d.id) === id);
@@ -148,7 +208,6 @@
                 return `<tr><td style="text-align:left;">${n}</td><td>${Math.round(d.r)}</td><td>${Math.round(d.p)}</td><td>${Math.round(d.d)}</td><td style="color:var(--danger)">R$${Math.round(d.l)}</td><td style="color:${ef>=95?'var(--success)':'var(--danger)'}">${ef.toFixed(1)}%</td></tr>`;
             }).join('');
 
-            // ARCO CORRIGIDO: Circunferência total de um meio círculo é PI * Raio (aprox 220)
             const circumference = 220; 
             const offset = circumference - (recipeEff / 100) * circumference;
             const color = recipeEff >= 95 ? 'var(--success)' : (recipeEff >= 80 ? 'var(--warning)' : 'var(--danger)');
@@ -204,8 +263,6 @@
     function logout() { firebase.auth().signOut().then(() => window.location.href = "login.html"); }
 </script>
 
-
-
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
@@ -213,10 +270,6 @@
       .catch(err => console.log("Erro PWA:", err));
   }
 </script>
-
-
-
-
 
 </body>
 </html>

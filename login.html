@@ -28,6 +28,7 @@
             width: 100%; height: 50px; background: #3b82f6; border: none; border-radius: 12px;
             color: white; font-weight: 800; text-transform: uppercase; cursor: pointer;
         }
+        #loading { color: white; margin-top: 10px; display: none; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -35,7 +36,8 @@
         <img src="imagen.png" class="logo">
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="pass" placeholder="Senha">
-        <button onclick="login()">Entrar no Painel</button>
+        <button id="loginBtn" onclick="login()">Entrar no Painel</button>
+        <div id="loading">Verificando...</div>
     </div>
     <script>
         const firebaseConfig = {
@@ -49,12 +51,37 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        function login() {
+        // Verifica se já está logado e redireciona
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                window.location.href = "index.html";
+            }
+        });
+
+        async function login() {
             const e = document.getElementById('email').value;
             const p = document.getElementById('pass').value;
-            auth.signInWithEmailAndPassword(e, p)
-                .then(() => window.location.href = "index.html")
-                .catch(err => alert("Erro: " + err.message));
+            const btn = document.getElementById('loginBtn');
+            const loading = document.getElementById('loading');
+
+            if (!e || !p) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+
+            btn.disabled = true;
+            loading.style.display = "block";
+
+            try {
+                // Define persistência local explicitamente antes do login
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                await auth.signInWithEmailAndPassword(e, p);
+                window.location.href = "index.html";
+            } catch (err) {
+                alert("Erro: " + err.message);
+                btn.disabled = false;
+                loading.style.display = "none";
+            }
         }
 
         if ('serviceWorker' in navigator) {
