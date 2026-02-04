@@ -4,16 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sítio São Sebastião - Dashboard Premium</title>
-    
-    
     <link rel="manifest" href="manifest.json">
-
-    
-    
-    
-    
-    
-    
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
@@ -23,43 +14,33 @@
         :root { --accent: #3b82f6; --danger: #ef4444; --success: #10b981; --warning: #f59e0b; --glass: rgba(15, 23, 42, 0.85); --border: rgba(255, 255, 255, 0.1); }
         body { font-family: 'Inter', sans-serif; background: #020617; background-image: radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15), transparent), url('https://www.transparenttextures.com/patterns/carbon-fibre.png'); background-attachment: fixed; margin: 0; color: #f8fafc; padding-bottom: 80px; }
         .container { padding: 15px; max-width: 1200px; margin: 0 auto; }
-        
-        /* HEADER */
         .main-header-card { background: var(--glass); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); padding: 20px; border-radius: 24px; border: 1px solid var(--border); margin-top: 10px; margin-bottom: 20px; display: flex; align-items: center; min-height: 110px; }
         .logo-area { flex: 0 0 85px; height: 85px; display: flex; align-items: center; justify-content: center; mix-blend-mode: lighten; margin-right: 20px; }
         .logo-area img { max-width: 100%; max-height: 100%; display: block; }
         .filters-container { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         input, .btn-nav { height: 38px; border-radius: 10px; font-size: 11px; width: 100%; box-sizing: border-box; }
         input { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0 8px; outline: none; }
-        input:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-nav { background: var(--accent); color: white; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 11px; }
-
-        /* KPIs */
         .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .card-kpi { background: var(--glass); padding: 18px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; height: 130px; box-sizing: border-box; justify-content: space-between; }
         .kpi-value { font-size: 26px; font-weight: 900; }
-
-        /* RECEITAS */
         .audit-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; -webkit-overflow-scrolling: touch; }
         .recipe-card { min-width: 340px; flex: 1; background: var(--glass); border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
         .recipe-header { background: rgba(0,0,0,0.4); padding: 15px; text-align: center; }
         .recipe-header h3 { margin: 0; font-size: 14px; font-weight: 900; text-transform: uppercase; color: var(--accent); }
         .recipe-count { font-size: 10px; color: #94a3b8; font-weight: 800; display: block; margin-top: 4px; text-transform: uppercase; }
-
-        /* VELOCÍMETRO SVG CORRIGIDO (VIRADO PARA CIMA) */
         .gauge-container { width: 160px; height: 90px; margin: 10px auto; position: relative; }
         .gauge-bg { fill: none; stroke: #1e293b; stroke-width: 14; }
         .gauge-fill { fill: none; stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease-out, stroke 1s; }
         .gauge-text-center { position: absolute; bottom: 5px; width: 100%; text-align: center; font-weight: 900; font-size: 26px; color: #fff; }
-
         table { width: 100%; border-collapse: collapse; font-size: 10px; }
         th { padding: 12px 4px; color: #64748b; font-weight: 800; border-bottom: 1px solid var(--border); }
         td { padding: 14px 4px; border-bottom: 1px solid rgba(255,255,255,0.02); text-align: center; font-weight: 600; color: #e2e8f0; }
-
         .chart-card { background: var(--glass); padding: 25px; border-radius: 28px; border: 1px solid var(--border); margin-top: 10px; }
         .chart-inner-box { min-width: 600px; height: 320px; }
         .footer-area { margin-top: 30px; text-align: center; }
         .btn-logout { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #64748b; padding: 10px 40px; border-radius: 50px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; }
+        #sync-status { font-size: 10px; color: #64748b; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -68,9 +49,10 @@
     <div class="main-header-card">
         <div class="logo-area"><img src="imagen.png" alt="Logo"></div>
         <div class="filters-container">
-            <div class="filter-group"><label>Início</label><input type="date" id="date-start" onchange="loadData()"></div>
-            <div class="filter-group"><label>Fim</label><input type="date" id="date-end" onchange="loadData()"></div>
+            <div class="filter-group"><label>Início</label><input type="date" id="date-start" onchange="applyFilters()"></div>
+            <div class="filter-group"><label>Fim</label><input type="date" id="date-end" onchange="applyFilters()"></div>
             <button class="btn-nav" style="grid-column: span 2;" onclick="clearFilters()">LIMPAR FILTROS</button>
+            <span id="sync-status">Sincronizando...</span>
         </div>
     </div>
 
@@ -107,69 +89,113 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     let performanceChart = null;
-    let minDateAvailable = null;
-    let maxDateAvailable = null;
+    let allData = [];
 
-    // Configura persistência local (o usuário permanece logado até fazer logout)
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-        .then(() => {
-            firebase.auth().onAuthStateChanged(user => { 
-                if (user) {
-                    initDashboard();
-                } else {
-                    window.location.href = "login.html"; 
-                }
-            });
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+        firebase.auth().onAuthStateChanged(user => { 
+            if (user) initDashboard(); 
+            else window.location.href = "login.html"; 
         });
+    });
 
     async function initDashboard() {
-        // Busca as datas limites disponíveis no banco
-        await updateDateLimits();
-        loadData();
+        loadFromLocalStorage();
+        await syncData();
+        updateDateLimits();
+        applyFilters();
     }
 
-    async function updateDateLimits() {
-        // Busca a data mais antiga e a mais recente para travar o calendário
-        const firstSnap = await db.collection("auditoria").orderBy("date", "asc").limit(1).get();
-        const lastSnap = await db.collection("auditoria").orderBy("date", "desc").limit(1).get();
-        
-        if (!firstSnap.empty) {
-            minDateAvailable = firstSnap.docs[0].data().date;
-            document.getElementById('date-start').min = minDateAvailable;
-            document.getElementById('date-end').min = minDateAvailable;
-        }
-        
-        if (!lastSnap.empty) {
-            maxDateAvailable = lastSnap.docs[0].data().date;
-            document.getElementById('date-start').max = maxDateAvailable;
-            document.getElementById('date-end').max = maxDateAvailable;
+    function loadFromLocalStorage() {
+        const cached = localStorage.getItem('dg500_data');
+        if (cached) {
+            try {
+                allData = JSON.parse(cached);
+                // Limpeza preventiva: remove duplicados que possam ter sido salvos anteriormente
+                allData = removeDuplicates(allData);
+            } catch(e) {
+                allData = [];
+            }
         }
     }
 
-    async function loadData() {
-        let query = db.collection("auditoria").orderBy("date", "desc");
-        
+    // Função crucial para evitar que valores mudem por duplicidade
+    function removeDuplicates(data) {
+        const seen = new Set();
+        return data.filter(item => {
+            // Cria uma chave única baseada nos dados do registro
+            const key = `${item.date}_${item.id}_${item.timestamp}_${item.totalP}_${item.totalR}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    async function syncData() {
+        const status = document.getElementById('sync-status');
+        try {
+            // Para garantir consistência total, pegamos os últimos 7 dias sempre, 
+            // mesmo que já tenhamos no cache, para capturar correções.
+            let lastDate = "2000-01-01";
+            if (allData.length > 0) {
+                const dates = allData.map(d => d.date).sort();
+                lastDate = dates[dates.length - 1];
+                
+                // Volta 2 dias na data de consulta para garantir que não perdemos nada processado com atraso
+                const d = new Date(lastDate);
+                d.setDate(d.getDate() - 2);
+                lastDate = d.toISOString().split('T')[0];
+            }
+
+            const snap = await db.collection("auditoria")
+                                 .where("date", ">=", lastDate)
+                                 .orderBy("date", "asc")
+                                 .get();
+
+            let added = 0;
+            snap.forEach(doc => {
+                const d = doc.data();
+                allData.push(d);
+                added++;
+            });
+
+            // Remove duplicados após a fusão do cache com os novos dados
+            allData = removeDuplicates(allData);
+            
+            // Ordena por data decrescente
+            allData.sort((a, b) => b.date.localeCompare(a.date));
+            
+            // Salva o estado limpo e único
+            localStorage.setItem('dg500_data', JSON.stringify(allData));
+            status.innerText = added > 0 ? "Dados atualizados" : "Sincronizado (Cache)";
+            
+        } catch (e) {
+            console.error(e);
+            status.innerText = "Modo Offline";
+        }
+    }
+
+    function updateDateLimits() {
+        if (allData.length === 0) return;
+        const dates = allData.map(d => d.date).sort();
+        document.getElementById('date-start').min = dates[0];
+        document.getElementById('date-start').max = dates[dates.length - 1];
+        document.getElementById('date-end').min = dates[0];
+        document.getElementById('date-end').max = dates[dates.length - 1];
+    }
+
+    function applyFilters() {
         const s = document.getElementById('date-start').value;
         const e = document.getElementById('date-end').value;
-        
-        // Se houver filtros, aplica na query do Firestore para eficiência
-        if (s) query = query.where("date", ">=", s);
-        if (e) query = query.where("date", "<=", e);
-        
-        const snap = await query.limit(300).get();
-        let data = []; 
-        snap.forEach(doc => data.push(doc.data()));
-        
-        // Ordena por data para o gráfico (Firestore desc, mas gráfico prefere asc)
-        data.sort((a, b) => a.date.localeCompare(b.date));
-        
-        renderDashboard(data);
+        let filtered = allData;
+        if (s) filtered = filtered.filter(d => d.date >= s);
+        if (e) filtered = filtered.filter(d => d.date <= e);
+        renderDashboard(filtered);
     }
 
     function clearFilters() {
         document.getElementById('date-start').value = "";
         document.getElementById('date-end').value = "";
-        loadData();
+        applyFilters();
     }
 
     function renderDashboard(data) {
@@ -180,7 +206,7 @@
         container.innerHTML = "";
 
         if (data.length === 0) {
-            container.innerHTML = "<div style='padding: 20px; color: #94a3b8;'>Nenhum dado encontrado para este período.</div>";
+            container.innerHTML = "<div style='padding: 20px; color: #94a3b8;'>Nenhum dado para exibir.</div>";
             return;
         }
 
@@ -216,7 +242,7 @@
                 <div class="recipe-card">
                     <div class="recipe-header">
                         <h3>${recipeMap[id]}</h3>
-                        <span class="recipe-count">${tratos.length} RECEITAS REALIZADAS</span>
+                        <span class="recipe-count">${tratos.length} RECEITAS</span>
                         <div class="gauge-container">
                             <svg width="160" height="85" viewBox="0 0 160 85">
                                 <path class="gauge-bg" d="M 10 80 A 70 70 0 0 1 150 80" />
@@ -260,16 +286,10 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 50, max: 100 } } }
         });
     }
-    function logout() { firebase.auth().signOut().then(() => window.location.href = "login.html"); }
+    function logout() { 
+        localStorage.removeItem('dg500_data');
+        firebase.auth().signOut().then(() => window.location.href = "login.html"); 
+    }
 </script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(() => console.log("PWA ativo"))
-      .catch(err => console.log("Erro PWA:", err));
-  }
-</script>
-
 </body>
 </html>
