@@ -2,94 +2,50 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
-    <title>Sítio São Sebastião - Sincronizador DG500</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <title>Painel Admin - GestaFazenda</title>
     <style>
-        :root { --accent: #3b82f6; --glass: rgba(15, 23, 42, 0.9); --border: rgba(255, 255, 255, 0.1); }
-        body { font-family: 'Inter', sans-serif; background: #020617; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .admin-card { background: var(--glass); padding: 30px; border-radius: 30px; border: 1px solid var(--border); width: 90%; max-width: 400px; text-align: center; }
-        .upload-area { border: 2px dashed #334155; padding: 40px 20px; border-radius: 20px; cursor: pointer; margin: 20px 0; transition: 0.3s; }
-        .upload-area:hover { border-color: var(--accent); background: rgba(59, 130, 246, 0.05); }
-        #status { font-size: 14px; margin-top: 15px; color: #94a3b8; line-height: 1.6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f3; display: flex; justify-content: center; padding: 40px; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #2c3e50; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-login { background: #2980b9; color: white; margin-top: 10px; }
+        .btn-login:hover { background: #2471a3; }
+        .btn-enviar { background: #27ae60; color: white; margin-top: 20px; }
+        .btn-enviar:hover { background: #219150; }
+        .btn-dashboard { background: #8e44ad; color: white; margin-top: 30px; }
+        .btn-dashboard:hover { background: #7d3c98; }
+        .btn-sair { background: #ecf0f1; color: #c0392b; margin-top: 10px; }
+        #status { text-align: center; margin-top: 15px; font-size: 14px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-<div class="admin-card">
-    <h2 style="margin:0; font-weight:900;">SUBIR DADOS</h2>
-    <p style="color:var(--accent); font-size:12px; font-weight:700; margin-bottom:20px;">COLETOR DG500</p>
-    <div class="upload-area" onclick="document.getElementById('csvFiles').click()">
-        <span style="font-size:40px;">📁</span>
-        <p style="margin:10px 0 0; font-weight:600;">Selecionar Arquivos CSV</p>
-        <input type="file" id="csvFiles" multiple accept=".csv" style="display:none" onchange="handleFiles(this.files)">
+
+<div class="container">
+    <h2>🚜 GestaFazenda Admin</h2>
+    
+    <div id="area-login">
+        <input type="email" id="email" placeholder="Seu e-mail do Firebase">
+        <input type="password" id="senha" placeholder="Sua senha">
+        <button onclick="fazerLogin()" class="btn-login">EFETUAR LOGIN</button>
     </div>
-    <div id="status">Selecione os arquivos gerados pela DG500.</div>
-    <button onclick="window.location.href='index.html'" style="margin-top:20px; background:none; border:none; color:#64748b; font-weight:700; cursor:pointer;">Voltar</button>
+
+    <div id="area-upload" class="hidden">
+        <p style="text-align:center; color: #7f8c8d;">Conectado como Administrador</p>
+        <hr>
+        <label for="arquivoCsv">Selecione um ou mais arquivos CSV:</label>
+        <input type="file" id="arquivoCsv" accept=".csv" multiple>
+        <button id="btn-enviar" class="btn-enviar">ENVIAR DADOS PARA O DASHBOARD</button>
+        
+        <button onclick="irParaDashboard()" class="btn-dashboard">📊 IR PARA O DASHBOARD</button>
+        
+        <button onclick="fazerSair()" class="btn-sair">Sair do Painel</button>
+    </div>
+
+    <div id="status"></div>
 </div>
 
-<script src="config.js"></script>
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBP_0G13P-jJAaZe0XFi_0Mtp3l02-cAc4",
-        authDomain: "fazenda-e5e25.firebaseapp.com",
-        projectId: "fazenda-e5e25",
-        storageBucket: "fazenda-e5e25.firebasestorage.app",
-        messagingSenderId: "531227081563",
-        appId: "1:531227081563:web:391f17caa7e7be090d387e"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    async function handleFiles(files) {
-        const status = document.getElementById('status');
-        let count = 0;
-        for (let file of files) {
-            const text = await file.text();
-            const lines = text.split('\n');
-            let dataFormatada = "", idReceita = "", totalP = 0, totalR = 0, totalLoss = 0, items = [], isComponentSection = false;
-
-            for (let line of lines) {
-                const col = line.split(';');
-                if (line.includes("Id;ID da receita")) {
-                    const info = lines[lines.indexOf(line) + 1].split(';');
-                    idReceita = info[1];
-                    let rawDate = info[3].split('/');
-                    dataFormatada = `${rawDate[2]}-${rawDate[1].padStart(2,'0')}-${rawDate[0].padStart(2,'0')}`;
-                }
-                if (line.includes("Dados dos componentes")) { isComponentSection = true; continue; }
-                if (isComponentSection && (line.trim() === "" || line.includes("Data;Início"))) { isComponentSection = false; continue; }
-
-                if (isComponentSection && col.length >= 4 && !isNaN(parseFloat(col[2].replace(',', '.')))) {
-                    let rawName = col[1].trim().toUpperCase();
-                    let nomeReal = aliasMap[rawName] || rawName;
-                    let p = parseFloat(col[2].replace(',', '.')) || 0;
-                    let r = parseFloat(col[3].replace(',', '.')) || 0;
-                    let diff = Math.abs(p - r);
-                    let preco = costs[nomeReal] || 0;
-                    let loss = diff * preco;
-                    totalP += p; totalR += r; totalLoss += loss;
-                    items.push({ name: nomeReal, p, r, diff, loss });
-                }
-            }
-
-            if (dataFormatada && items.length > 0) {
-                try {
-                    await db.collection("auditoria").add({ date: dataFormatada, id: parseInt(idReceita), totalP, totalR, totalLoss, items, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                    count++;
-                } catch (e) { status.innerText = "Erro: " + e.message; return; }
-            }
-        }
-        status.innerHTML = `<b style="color:#10b981;">✅ SUCESSO!</b><br>${count} tratos integrados.`;
-        setTimeout(() => window.location.href = "index.html", 1500);
-    }
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-    }
-</script>
+<script type="module" src="admin.js"></script>
 </body>
 </html>
