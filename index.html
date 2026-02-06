@@ -10,9 +10,8 @@
             --neon-danger: #ff4b66; --text-white: #ffffff; --text-dim: #b2bac2;
             --border-card: rgba(255, 255, 255, 0.1);
         }
-        /* Trava o corpo para ocupar sempre 100% da altura da TV */
-        html, body { height: 100vh; overflow: hidden; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); color: var(--text-white); padding: 10px; display: flex; flex-direction: column; box-sizing: border-box; }
+        /* Esconde o corpo do site até verificar o login */
+        body { display: none; font-family: 'Segoe UI', sans-serif; background: var(--bg-body); color: var(--text-white); padding: 10px; flex-direction: column; height: 100vh; overflow: hidden; margin: 0; box-sizing: border-box; }
 
         .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 5px 20px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border-card); flex-shrink: 0; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
@@ -28,7 +27,6 @@
         .global-perda-area { flex: 1.2; text-align: right; border-left: 1px solid #265d97; padding-left: 20px; }
         .global-perda-area p { margin: 0; font-size: 24px; font-weight: bold; color: var(--neon-danger); }
         
-        /* Grid de Receitas - Ocupa 45% da altura */
         .grid-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; height: 45%; margin-bottom: 8px; flex-shrink: 0; }
         .card { background: var(--bg-card); padding: 10px; border-radius: 12px; border: 1px solid var(--border-card); display: flex; flex-direction: column; overflow: hidden; }
         .tabela-scroll { flex-grow: 1; overflow-y: auto; margin-top: 5px; }
@@ -40,16 +38,12 @@
         .mini-tabela th { position: sticky; top: 0; background: var(--bg-card); text-align: left; color: var(--text-dim); padding: 5px 2px; border-bottom: 1px solid #265d97; z-index: 10; }
         .mini-tabela td { padding: 6px 2px; border-bottom: 1px solid #173a5e; }
 
-        /* Área Inferior - ESTICA para preencher o vazio do F11 */
         .bottom-section { display: flex; gap: 8px; flex-grow: 1; min-height: 0; align-items: stretch; }
         .rank-card { flex: 0.6; background: #07192e; border-radius: 10px; border: 1px solid #265d97; padding: 10px; display: flex; flex-direction: column; overflow: hidden; }
         .rank-card h4 { margin: 0 0 8px; font-size: 10px; color: var(--neon-cyan); text-transform: uppercase; border-bottom: 1px solid rgba(0, 242, 255, 0.2); padding-bottom: 4px; flex-shrink: 0; }
-        .rank-list { flex-grow: 1; overflow: hidden; }
         .rank-item { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
         
         .grafico-wrapper { flex: 2.2; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-card); padding: 15px; position: relative; }
-        canvas { width: 100% !important; height: 100% !important; }
-
         .txt-erro { color: var(--neon-danger); font-weight: bold; }
         .txt-ok { color: var(--neon-cyan); font-weight: bold; }
     </style>
@@ -112,5 +106,4 @@
 
     <script type="module" src="index.js"></script>
 </body>
-
 </html>
