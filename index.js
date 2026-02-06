@@ -1,10 +1,23 @@
-import { db } from './firebase-init.js';
+import { db, auth } from './firebase-init.js'; // Certifique-se que o auth está exportado no init
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let todosOsDados = [];
 let chartEvolucao = null;
 const inputInicio = document.getElementById('data-inicio');
 const inputFim = document.getElementById('data-fim');
+
+// VERIFICAÇÃO DE LOGIN ANTES DE TUDO
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // Se estiver logado, mostra o site e inicia os dados
+        document.body.style.display = "flex";
+        inicializar();
+    } else {
+        // Se não estiver logado, manda para a tela de login
+        window.location.href = "login.html";
+    }
+});
 
 function obterCorEfic(v) { return v >= 95 ? "#00f2ff" : (v >= 85 ? "#7cc6fe" : "#ff4b66"); }
 
@@ -17,14 +30,8 @@ async function inicializar() {
         if (todosOsDados.length > 0) {
             const min = todosOsDados[0].dataISO;
             const max = todosOsDados[todosOsDados.length - 1].dataISO;
-            
-            // TRAVA O RANGE FÍSICO DO CALENDÁRIO
             inputInicio.min = min; inputInicio.max = max;
-            inputFim.min = min; inputFim.max = max;
-            
-            // VOLTA AS DATAS PARA O PADRÃO ORIGINAL
-            inputInicio.value = min;
-            inputFim.value = max;
+            inputInicio.value = min; inputFim.value = max;
         }
         processar(todosOsDados);
     } catch (e) { console.error("Erro ao carregar:", e); }
@@ -119,5 +126,3 @@ const filtrar = () => processar(todosOsDados.filter(d => d.dataISO >= inputInici
 inputInicio.addEventListener('change', filtrar);
 inputFim.addEventListener('change', filtrar);
 document.getElementById('btn-reset').addEventListener('click', () => inicializar());
-
-inicializar();
